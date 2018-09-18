@@ -44,41 +44,41 @@ class WaypointUpdater(object):
 
         self.loop()
 
-	def loop(self):
-		rate = rospy.Rate(50)
-		while not rospy.is_shutdown():
-			if self.pose and self.base_waypoints:
-				closest_waypoint_idx = self.get_closest_waypoint_id()
-				self.publish_waypoints(closest_waypoint_idx)
-			rate.sleep()
+    def loop(self):
+        rate = rospy.Rate(50)
+        while not rospy.is_shutdown():
+            if self.pose and self.base_waypoints:
+                closest_waypoint_idx = self.get_closest_waypoint_id()
+                self.publish_waypoints(closest_waypoint_idx)
+            rate.sleep()
 	
-	def get_closest_waypoint_id(self):
-		x = self.pose.pose.position.x
-		y = self.pose.pose.position.y
-		closest_idx = self.waypoint_tree.query([x,y],1)[1]	
+    def get_closest_waypoint_id(self):
+        x = self.pose.pose.position.x
+        y = self.pose.pose.position.y
+        closest_idx = self.waypoint_tree.query([x,y],1)[1]	
+        
+        #chck if closest is ahead or behind
+        closest_cord = self.waypoints_2d[closest_idx]
+        prev_cord = self.waypoints_2d[closest_idx-1]
+        
+        #equation of hyper plane
+        cl_vect = np.array(closest_cord)
+        prev_vect = np.array(prev_cord)
+        pos_vect = np.array([x,y])
+        
+        val = np.dot(cl_vect - prev_vect, pos_vect - cl_vect)
+        
+        if val>0:
+            closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
+        
+        return closest_idx
 		
-		#chck if closest is ahead or behind
-		closest_cord = self.waypoints_2d[closest_idx]
-		prev_cord = self.waypoints_2d[closest_idx-1]
 		
-		#equation of hyper plane
-		cl_vect = np.array(closest_cord)
-		prev_vect = np.array(prev_cord)
-		pos_vect = np.array([x,y])
-		
-		val = np.dot(cl_vect - prev_vect, pos_vect - cl_vect)
-		
-		if val>0:
-			closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
-			
-		return closest_idx
-		
-		
-	def publish_waypoints(self,closest_idx):
-		lane = Lane()
-		lane.header = self.base_waypoints.header
-		lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx + LOOKAHEAD_WPS]
-		self.final_waypoints_pub.publish(lane)
+    def publish_waypoints(self,closest_idx):
+        lane = Lane()
+        lane.header = self.base_waypoints.header
+        lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx + LOOKAHEAD_WPS]
+        self.final_waypoints_pub.publish(lane)
 	
     def pose_cb(self, msg):
         # TODO: Implement
@@ -88,8 +88,8 @@ class WaypointUpdater(object):
         # TODO: Implement
         self.base_waypoints = waypoints
         if not self.waypoints_2d:
-			self.waypoints_2d = [[wp.pose.pose.position.x, wp.pose.pose.position.y] for wp in waypoints.waypoints]
-			self.waypoint_tree = KDTree(self.waypoints_2d)
+            self.waypoints_2d = [[wp.pose.pose.position.x, wp.pose.pose.position.y] for wp in waypoints.waypoints]
+            self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
