@@ -51,13 +51,11 @@ class Controller(object):
         self.last_vel = current_vel
         
         current_time = rospy.get_time()
-        sample_time = current_time - self.last_time
+        sample_time = 1/50 #current_time - self.last_time
         self.last_time = current_time
 		
         throttle = self.throttle_controller.step(vel_error, sample_time)
         brake = 0
-        if throttle > 0.8:
-            throttle = 0.8
         if throttle < 0:
             brake = -1.0 * self.vehicle_mass * self.wheel_radius * throttle
             throttle = 0			
