@@ -107,7 +107,7 @@ class WaypointUpdater(object):
             temp.append(p)
         return temp			
 	
-	def pose_cb(self, msg):
+    def pose_cb(self, msg):
         # TODO: Implement
         self.pose = msg
 
