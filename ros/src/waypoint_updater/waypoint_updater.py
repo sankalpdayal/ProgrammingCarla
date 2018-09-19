@@ -88,8 +88,10 @@ class WaypointUpdater(object):
         base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]		
         if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
             lane.waypoints = base_waypoints
+            rospy.loginfo('No change in waypoints')
         else:
-            lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx) 
+            lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx)
+            rospy.loginfo('Waypoints changed because of traffic light')			
         return lane
 
     def decelerate_waypoints(self, waypoints, closest_idx):
@@ -122,7 +124,7 @@ class WaypointUpdater(object):
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
         self.stopline_wp_idx = msg.data
-        rospy.loginfo(self.stopline_wp_idx)
+        rospy.loginfo(rospy.get_name() + str(self.stopline_wp_idx))
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
