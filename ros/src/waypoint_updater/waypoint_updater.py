@@ -48,7 +48,7 @@ class WaypointUpdater(object):
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(50)
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             if self.pose and self.base_lane:
                 self.publish_waypoints()
@@ -90,6 +90,7 @@ class WaypointUpdater(object):
             lane.waypoints = base_waypoints
             #rospy.loginfo('No change in waypoints')
         else:
+            #lane.waypoints = base_waypoints
             lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx)
             #rospy.loginfo('Waypoints changed because of traffic light')			
         return lane
