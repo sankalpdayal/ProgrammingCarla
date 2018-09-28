@@ -41,7 +41,7 @@ class TLClassifier(object):
         
     def get_localization(self, image):  
         with self.detection_graph.as_default():
-            image_expanded = np.expand_dims(image, axis=0)
+            image_expanded = np.expand_dims(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), axis=0)
             (boxes, scores, classes, num_detections) = self.sess.run([self.boxes, self.scores, self.classes, self.num_detections],
                                                                      feed_dict={self.image_tensor: image_expanded})
             boxes=np.squeeze(boxes)
@@ -130,7 +130,7 @@ class TLClassifier(object):
                 box = boxes[i]
                 box_height = box[2] - box[0]
                 box_width = box[3] - box[1]
-                if scores[i]>0.25 and box_height/box_width>1.5:
+                if scores[i]>0.25 and box_height/box_width>1.5 and box_height > 0.1:
                     traffic_boxes.append(self.box_normal_to_pixel(boxes[i], dim))
                     light_found = True
 
@@ -146,8 +146,10 @@ class TLClassifier(object):
                 else:
                     green_votes += 1
             if red_votes > green_votes:
+                print('RED')
                 return TrafficLight.RED
             else:
+                print('GREEN')
                 return TrafficLight.GREEN
-
+        print('UNKNOWN')
         return TrafficLight.UNKNOWN
