@@ -3,12 +3,14 @@ from sklearn.linear_model import LogisticRegression
 import pickle
 import tensorflow as tf
 from keras.models import load_model
+import numpy as np
+import cv2
 
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
         detect_model_name = 'ssd_mobilenet_v1_coco_2018_01_28'
-        PATH_TO_CKPT = '../../../../tl/' + detect_model_name + '/frozen_inference_graph.pb'
+        PATH_TO_CKPT = '/home/workspace/ProgrammingCarla/tl/' + detect_model_name + '/frozen_inference_graph.pb'
         # setup tensorflow graph
         self.detection_graph = tf.Graph()
 
@@ -32,20 +34,20 @@ class TLClassifier(object):
                 self.scores =self.detection_graph.get_tensor_by_name('detection_scores:0')
                 self.classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
                 self.num_detections =self.detection_graph.get_tensor_by_name('num_detections:0')
-       #setup light state detector
-       self.hist_bin_size = 2
-       self.tl_state_clf = pickle.load(open('../../../../tl/classifier.p', 'rb'))
-    
+        #setup light state detector
+        self.hist_bin_size = 2
+        self.tl_state_clf = pickle.load(open('/home/workspace/ProgrammingCarla/tl/classifier.p', 'rb'))
+        TrafficLight.RED
+        
     def get_localization(self, image):  
         with self.detection_graph.as_default():
             image_expanded = np.expand_dims(image, axis=0)
-            (boxes, scores, classes, num_detections) = self.sess.run(
-                  [self.boxes, self.scores, self.classes, self.num_detections],
-                  feed_dict={self.image_tensor: image_expanded})
+            (boxes, scores, classes, num_detections) = self.sess.run([self.boxes, self.scores, self.classes, self.num_detections],
+                                                                     feed_dict={self.image_tensor: image_expanded})
             boxes=np.squeeze(boxes)
             classes =np.squeeze(classes)
             scores = np.squeeze(scores)
-            return boxes, classes, scores
+        return boxes, classes, scores
     
     def box_normal_to_pixel(self, box, dim):
         height, width = dim[0], dim[1]
@@ -119,16 +121,17 @@ class TLClassifier(object):
 
         """
         #TODO implement light color prediction
-        boxes, classes, scores = self.localization(image)
+        boxes, classes, scores = self.get_localization(image)
         traffic_boxes = []
-	dim = image.shape[0:2]
+        dim = image.shape[0:2]
         light_found = False
-	for i, cls in enumerate(classes):
-	    if cls == 10:
+        for i, cls in enumerate(classes):
+            if cls == 10:
+                box = boxes[i]
                 box_height = box[2] - box[0]
                 box_width = box[3] - box[1]
-		if scores[i]>0.25 and box_height/box_width>1.5:
-		    traffic_boxes.append(tl_cls.box_normal_to_pixel(boxes[i], dim))
+                if scores[i]>0.25 and box_height/box_width>1.5:
+                    traffic_boxes.append(self.box_normal_to_pixel(boxes[i], dim))
                     light_found = True
 
         if light_found:
